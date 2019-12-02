@@ -81,8 +81,8 @@ class WorkerNode:
         '''
         def pubkey(key):
             rospy.loginfo('Got public key: %s', key)
-            self.public_key = rsa.key.load_pkcs1(key)
-        rospy.Subscriber(prefix + '/pubkey', String, callback)
+            self.public_key = rsa.PublicKey.load_pkcs1(key.data)
+        rospy.Subscriber(prefix + '/pubkey', String, pubkey)
 
 
         self.liability_proxy.start(liability.address)
