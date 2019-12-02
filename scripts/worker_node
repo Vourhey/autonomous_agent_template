@@ -3,6 +3,7 @@
 
 # Standart, System and Third party
 from collections import namedtuple
+import rsa
 
 # ROS
 import rospy
@@ -21,6 +22,8 @@ class WorkerNode:
     def __init__(self):
         rospy.init_node('worker')
         rospy.loginfo('Launching worker node...')
+
+        self.public_key = None
 
         '''
           Any new liabilities for our CPS will be published to /liability/ready topic
@@ -59,12 +62,28 @@ class WorkerNode:
             rospy.loginfo('Got new tast: %s', task)
 
             # MAKE YOUR PROCESS HERE
-            pub.publish(String(data="{\"data\": \"Salut!\"}"))
+            result = 'Salut!'
+
+            # Encrypt when pubkey available
+            if self.public_key:
+                result = rsa.encrypt(result.encode('utf8'), self.public_key).hex()
+
+            pub.publish(String(data=result))
             rospy.loginfo('Worker works!')
 
             self.liability_proxy.finish(liability.address, True)
             rospy.loginfo('Process complete.')
         rospy.Subscriber(prefix + '/task', String, callback)
+
+        '''
+          Here you get public key of task receiver and store it in class instance for
+          work result encryption
+        '''
+        def pubkey(key):
+            rospy.loginfo('Got public key: %s', key)
+            self.public_key = rsa.key.load_pkcs1(key)
+        rospy.Subscriber(prefix + '/pubkey', String, callback)
+
 
         self.liability_proxy.start(liability.address)
 
